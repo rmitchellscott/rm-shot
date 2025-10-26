@@ -13,10 +13,9 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-// Import from framebuffer-spy (optional)
+// Import from framebuffer-spy
 void* getFramebufferAddress() __attribute__((weak));
 
-// Debug logging to stderr only
 static void debug_log(const char* format, ...) {
     va_list args;
     va_start(args, format);
@@ -43,7 +42,6 @@ static DeviceInfo detectDevice(void)
 
     char machine[64] = {0};
     if (fgets(machine, sizeof(machine), f)) {
-        // Convert to lowercase
         for (char* p = machine; *p; p++) {
             if (*p >= 'A' && *p <= 'Z') *p += 32;
         }
@@ -75,7 +73,7 @@ static DeviceInfo detectDevice(void)
 
 static void* getFramebufferAddr(void)
 {
-    // Get framebuffer address from environment variable set by framebuffer-spy
+    // Get framebuffer address
     const char* envAddr = getenv("FRAMEBUFFER_SPY_EXTENSION_FBADDR");
     if (envAddr) {
         void* parsedAddr = NULL;
@@ -164,7 +162,6 @@ static unsigned char* convertBGRAtoRGB(unsigned char* bgra, int width, int heigh
     return rgb;
 }
 
-// Create directory recursively (like mkdir -p)
 static int mkdirp(const char* path)
 {
     char tmp[512];
@@ -198,7 +195,6 @@ static int mkdirp(const char* path)
 
 int takeScreenshot(const char* basePath)
 {
-    // Ensure directory exists
     mkdirp(basePath);
 
     DeviceInfo device = detectDevice();
@@ -228,7 +224,6 @@ int takeScreenshot(const char* basePath)
         return 0;
     }
 
-    // Generate timestamp filename
     time_t now = time(NULL);
     struct tm* tm_info = localtime(&now);
     char timestamp[32];
@@ -237,7 +232,6 @@ int takeScreenshot(const char* basePath)
     char filename[512];
     snprintf(filename, sizeof(filename), "%s/screenshot_%s.png", basePath, timestamp);
 
-    // Save PNG
     int result = stbi_write_png(filename, device.width, device.height, 3, rgb, device.width * 3);
     free(rgb);
 
@@ -255,13 +249,11 @@ void _xovi_construct() {
     debug_log("[rm-shot]: Extension loaded\n");
 }
 
-// Thread argument structure
 typedef struct {
     char* path;
     int delay_ms;
 } ScreenshotThreadArgs;
 
-// Background thread function
 void* screenshotThread(void* arg) {
     ScreenshotThreadArgs* args = (ScreenshotThreadArgs*)arg;
 
@@ -277,35 +269,28 @@ void* screenshotThread(void* arg) {
 }
 
 // Message broker handler - called from QML via xovi-message-broker
-// Parameter format: "path" or "path,delay_ms"
-// Examples: "/home/root" or "/home/root,100"
 char* screenshotHandler(const char* param)
 {
-    // Parse parameter: "path,delay_ms" or just "path"
     const char* input = (param && param[0]) ? param : "/home/root,0";
     char* path = NULL;
     int delay_ms = 0;
 
     const char* comma = strchr(input, ',');
     if (comma) {
-        // Format: "path,delay_ms"
         size_t pathLen = comma - input;
         path = malloc(pathLen + 1);
         memcpy(path, input, pathLen);
         path[pathLen] = '\0';
         delay_ms = atoi(comma + 1);
     } else {
-        // Format: "path" (no delay)
         path = strdup(input);
         delay_ms = 0;
     }
 
-    // Create thread arguments
     ScreenshotThreadArgs* args = malloc(sizeof(ScreenshotThreadArgs));
     args->path = path;
     args->delay_ms = delay_ms;
 
-    // Launch background thread
     pthread_t thread;
     if (pthread_create(&thread, NULL, screenshotThread, args) == 0) {
         pthread_detach(thread);
