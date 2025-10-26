@@ -1,0 +1,7 @@
+version 0.3.0
+
+export screenshotHandler
+with
+    xovi-message-broker$simpleSignal = "takeScreenshot"
+    xovi-message-broker$version = 1
+end

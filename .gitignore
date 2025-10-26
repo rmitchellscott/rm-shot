@@ -1,0 +1,17 @@
+# Build artifacts
+build-aarch64/
+build-armv7/
+*.so
+*.o
+
+# Test screenshots
+screenshot_*.png
+
+# Qt build files
+.qmake.stash
+moc_*.cpp
+moc_*.h
+*.pro.user
+
+# macOS
+.DS_Store

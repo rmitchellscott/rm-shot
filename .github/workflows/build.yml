@@ -1,0 +1,82 @@
+name: Build rm-shot
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*.*.*']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [armv7, aarch64]
+        include:
+          - arch: armv7
+            cc: arm-linux-gnueabihf-gcc
+            packages: gcc-arm-linux-gnueabihf
+          - arch: aarch64
+            cc: aarch64-linux-gnu-gcc
+            packages: gcc-aarch64-linux-gnu
+
+    steps:
+      - name: Checkout rm-shot
+        uses: actions/checkout@v4
+
+      - name: Install cross-compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.packages }}
+
+      - name: Checkout xovi (for xovigen.py)
+        uses: actions/checkout@v4
+        with:
+          repository: asivery/xovi
+          path: xovi-repo
+
+      - name: Build ${{ matrix.arch }}
+        env:
+          XOVI_REPO: ${{ github.workspace }}/xovi-repo
+          CC_ARMV7: arm-linux-gnueabihf-gcc
+          CC_AARCH64: aarch64-linux-gnu-gcc
+        run: |
+          if [ "${{ matrix.arch }}" = "armv7" ]; then
+            make rm-shot-armv7.so
+          else
+            make rm-shot-aarch64.so
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rm-shot-${{ matrix.arch }}
+          path: rm-shot-${{ matrix.arch }}.so
+          retention-days: 90
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download armv7 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rm-shot-armv7
+
+      - name: Download aarch64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rm-shot-aarch64
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            rm-shot-armv7.so
+            rm-shot-aarch64.so
+          generate_release_notes: true
