@@ -1,6 +1,10 @@
 # rm-shot
-
+<img src="assets/rm-shot.svg" alt="rm-shot Icon" width="125" align="right">
+<p align="justify">
 A xovi extension that provides screenshot functionality for reMarkable tablets.
+</p>
+
+<br clear="right">
 
 ## Features
 
