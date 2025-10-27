@@ -13,14 +13,14 @@ A xovi extension that provides screenshot functionality for reMarkable tablets.
 
 <br clear="right">
 
-# Just Need To Install This To Use Something Else?
-## Dependencies
+## Just Need To Install This To Use Something Else?
+### Dependencies
 
 - [xovi](https://github.com/asivery/rm-xovi-extensions/blob/master/INSTALL.MD) - Extension framework
     - framebuffer-spy - Required to access the framebuffer address
     - xovi-message-broker - Required for QML/C communication
 
-## Installation
+### Installation
 
 1. Ensure dependencies are installed
 2. Download the `.so` file for your architecture from the [latest release](https://github.com/rmitchellscott/rm-shot/releases/latest) and place it in `/home/root/xovi/extensions.d/` on your reMarkable tablet
@@ -36,15 +36,15 @@ To verify which version of rm-shot is installed:
 strings /home/root/xovi/extensions.d/rm-shot-*.so | grep "rm-shot version"
 ```
 
-# Want To Build Something Using This?
-## Features
+## Want To Build Something Using This?
+### Features
 
 - Automatic device detection
 - Timestamped screenshot filenames (`screenshot_YYYY-MM-DD_HH-mm-ss.png`)
 - Configurable screenshot destination
 - Configurable delay for UI animations to complete
 
-## Parameter Format
+### Parameter Format
 
 The parameter to `takeScreenshot` follows the format: `"path,delay_ms"` or just `"path"`
 
@@ -58,7 +58,7 @@ Examples:
 
 The directory will be created automatically if it doesn't exist.
 
-## QML Usage
+### QML Usage
 
 ```qml
 import net.asivery.XoviMessageBroker 1.0
@@ -87,7 +87,7 @@ Item {
 }
 ```
 
-## Building
+### Building
 
 ```bash
 make
@@ -97,6 +97,6 @@ This builds both architectures:
 - `rm-shot-aarch64.so` - For reMarkable Paper Pro
 - `rm-shot-armv7.so` - For reMarkable 2
 
-## License
+### License
 
 MIT
