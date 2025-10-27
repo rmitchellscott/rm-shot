@@ -88,6 +88,16 @@ jobs:
         env:
           OUTPUT: CHANGELOG.md
 
+      - name: Add device compatibility info
+        run: |
+          cat >> CHANGELOG.md << 'EOF'
+
+          ## Device Compatibility
+
+          - **reMarkable 2**: `rm-shot-armv7.so`
+          - **reMarkable Paper Pro**: `rm-shot-aarch64.so`
+          EOF
+
       - name: Download armv7 artifact
         uses: actions/download-artifact@v4
         with:
