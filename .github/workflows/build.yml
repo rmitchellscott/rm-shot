@@ -30,11 +30,23 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ${{ matrix.packages }}
 
-      - name: Checkout xovi (for xovigen.py)
-        uses: actions/checkout@v4
-        with:
-          repository: asivery/xovi
-          path: xovi-repo
+      - name: Download xovi release
+        run: |
+          LATEST_TAG=$(curl -s https://api.github.com/repos/asivery/xovi/releases/latest | jq -r .tag_name)
+
+          if [ "$LATEST_TAG" = "null" ] || [ -z "$LATEST_TAG" ]; then
+            echo "Error: No xovi release found"
+            exit 1
+          fi
+
+          echo "Using xovi release: $LATEST_TAG"
+
+          curl -L -o xovi.tar.gz \
+            "https://github.com/asivery/xovi/archive/refs/tags/$LATEST_TAG.tar.gz"
+          tar -xzf xovi.tar.gz
+          mv xovi-* xovi-repo
+          rm xovi.tar.gz
+          echo "Successfully extracted xovi release $LATEST_TAG"
 
       - name: Build ${{ matrix.arch }}
         env:
