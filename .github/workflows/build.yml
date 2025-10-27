@@ -75,6 +75,19 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: CHANGELOG.md
+
       - name: Download armv7 artifact
         uses: actions/download-artifact@v4
         with:
@@ -91,4 +104,4 @@ jobs:
           files: |
             rm-shot-armv7.so
             rm-shot-aarch64.so
-          generate_release_notes: true
+          body_path: CHANGELOG.md
