@@ -33,6 +33,7 @@ static void debug_log(const char* format, ...) {
 typedef struct {
     int width;
     int height;
+    int displayWidth;
     int bytesPerPixel;
     int isRGBA; // 1 for RGBA (Paper Pro), 0 for RGB565 (RM2)
     const char* name;
@@ -42,7 +43,7 @@ static DeviceInfo detectDevice(void)
 {
     FILE* f = fopen("/sys/devices/soc0/machine", "r");
     if (!f) {
-        DeviceInfo dev = {1404, 1872, 2, 0, "RM2"};
+        DeviceInfo dev = {1404, 1872, 1404, 2, 0, "RM2"};
         return dev;
     }
 
@@ -58,18 +59,21 @@ static DeviceInfo detectDevice(void)
     if (strstr(machine, "chiappa")) {
         dev.width = 960;
         dev.height = 1696;
+        dev.displayWidth = 954;
         dev.bytesPerPixel = 4;
         dev.isRGBA = 1;
         dev.name = "Paper Pro Move";
     } else if (strstr(machine, "ferrari")) {
         dev.width = 1632;
         dev.height = 2154;
+        dev.displayWidth = 1632;
         dev.bytesPerPixel = 4;
         dev.isRGBA = 1;
         dev.name = "Paper Pro";
     } else {
         dev.width = 1404;
         dev.height = 1872;
+        dev.displayWidth = 1404;
         dev.bytesPerPixel = 2;
         dev.isRGBA = 0;
         dev.name = "RM2";
@@ -129,40 +133,48 @@ static unsigned char* readFramebuffer(void* address, DeviceInfo device)
 }
 
 // Convert RGB565 to RGB888
-static unsigned char* convertRGB565toRGB888(unsigned char* rgb565, int width, int height)
+static unsigned char* convertRGB565toRGB888(unsigned char* rgb565, int width, int height, int displayWidth)
 {
-    size_t pixelCount = width * height;
+    size_t pixelCount = displayWidth * height;
     unsigned char* rgb888 = malloc(pixelCount * 3);
     if (!rgb888) return NULL;
 
-    for (size_t i = 0; i < pixelCount; i++) {
-        unsigned short pixel = ((unsigned short*)rgb565)[i];
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < displayWidth; x++) {
+            size_t srcIdx = y * width + x;
+            size_t dstIdx = y * displayWidth + x;
+            unsigned short pixel = ((unsigned short*)rgb565)[srcIdx];
 
-        // RGB565: RRRRR GGGGGG BBBBB
-        unsigned char r = (pixel >> 11) & 0x1F;
-        unsigned char g = (pixel >> 5) & 0x3F;
-        unsigned char b = pixel & 0x1F;
+            // RGB565: RRRRR GGGGGG BBBBB
+            unsigned char r = (pixel >> 11) & 0x1F;
+            unsigned char g = (pixel >> 5) & 0x3F;
+            unsigned char b = pixel & 0x1F;
 
-        // Scale to 8-bit
-        rgb888[i * 3 + 0] = (r * 255) / 31;
-        rgb888[i * 3 + 1] = (g * 255) / 63;
-        rgb888[i * 3 + 2] = (b * 255) / 31;
+            // Scale to 8-bit
+            rgb888[dstIdx * 3 + 0] = (r * 255) / 31;
+            rgb888[dstIdx * 3 + 1] = (g * 255) / 63;
+            rgb888[dstIdx * 3 + 2] = (b * 255) / 31;
+        }
     }
 
     return rgb888;
 }
 
 // Convert BGRA to RGB (swap R and B, drop A)
-static unsigned char* convertBGRAtoRGB(unsigned char* bgra, int width, int height)
+static unsigned char* convertBGRAtoRGB(unsigned char* bgra, int width, int height, int displayWidth)
 {
-    size_t pixelCount = width * height;
+    size_t pixelCount = displayWidth * height;
     unsigned char* rgb = malloc(pixelCount * 3);
     if (!rgb) return NULL;
 
-    for (size_t i = 0; i < pixelCount; i++) {
-        rgb[i * 3 + 0] = bgra[i * 4 + 2]; // R = B
-        rgb[i * 3 + 1] = bgra[i * 4 + 1]; // G = G
-        rgb[i * 3 + 2] = bgra[i * 4 + 0]; // B = R
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < displayWidth; x++) {
+            size_t srcIdx = (y * width + x) * 4;
+            size_t dstIdx = (y * displayWidth + x) * 3;
+            rgb[dstIdx + 0] = bgra[srcIdx + 2]; // R = B
+            rgb[dstIdx + 1] = bgra[srcIdx + 1]; // G = G
+            rgb[dstIdx + 2] = bgra[srcIdx + 0]; // B = R
+        }
     }
 
     return rgb;
@@ -220,9 +232,9 @@ int takeScreenshot(const char* basePath)
     // Convert to RGB888 format for PNG
     unsigned char* rgb = NULL;
     if (device.isRGBA) {
-        rgb = convertBGRAtoRGB(fbData, device.width, device.height);
+        rgb = convertBGRAtoRGB(fbData, device.width, device.height, device.displayWidth);
     } else {
-        rgb = convertRGB565toRGB888(fbData, device.width, device.height);
+        rgb = convertRGB565toRGB888(fbData, device.width, device.height, device.displayWidth);
     }
     free(fbData);
 
@@ -238,7 +250,7 @@ int takeScreenshot(const char* basePath)
     char filename[512];
     snprintf(filename, sizeof(filename), "%s/screenshot_%s.png", basePath, timestamp);
 
-    int result = stbi_write_png(filename, device.width, device.height, 3, rgb, device.width * 3);
+    int result = stbi_write_png(filename, device.displayWidth, device.height, 3, rgb, device.displayWidth * 3);
     free(rgb);
 
     if (result) {
