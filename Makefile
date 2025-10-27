@@ -1,9 +1,11 @@
 XOVI_REPO ?= $(HOME)/github/asivery/xovi
 name = rm-shot
 
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+
 CC_AARCH64 ?= aarch64-linux-gnu-gcc
 CC_ARMV7 ?= armv7-unknown-linux-gnueabihf-gcc
-CFLAGS = -D_GNU_SOURCE -fPIC -O2
+CFLAGS = -D_GNU_SOURCE -fPIC -O2 -DVERSION=\"$(VERSION)\"
 LDFLAGS = -lpthread
 
 # Architecture-specific build directories

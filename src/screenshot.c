@@ -13,6 +13,12 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#ifndef VERSION
+#define VERSION "unknown"
+#endif
+
+const char *rm_shot_version = "rm-shot version " VERSION;
+
 // Import from framebuffer-spy
 void* getFramebufferAddress() __attribute__((weak));
 

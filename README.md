@@ -28,6 +28,14 @@ A xovi extension that provides screenshot functionality for reMarkable tablets.
     - **reMarkable Paper Pro**: `rm-shot-aarch64.so`
 3. Restart xovi
 
+### Checking Version
+
+To verify which version of rm-shot is installed:
+
+```bash
+strings /home/root/xovi/extensions.d/rm-shot-*.so | grep "rm-shot version"
+```
+
 # Want To Build Something Using This?
 ## Features
 

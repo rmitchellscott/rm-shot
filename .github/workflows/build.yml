@@ -53,6 +53,7 @@ jobs:
           XOVI_REPO: ${{ github.workspace }}/xovi-repo
           CC_ARMV7: arm-linux-gnueabihf-gcc
           CC_AARCH64: aarch64-linux-gnu-gcc
+          VERSION: ${{ github.ref_name }}
         run: |
           if [ "${{ matrix.arch }}" = "armv7" ]; then
             make rm-shot-armv7.so
