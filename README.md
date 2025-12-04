@@ -1,6 +1,7 @@
 # rm-shot
 [![rm2](https://img.shields.io/badge/rM2-supported-green)](https://remarkable.com/store/remarkable-2)
 [![rmpp](https://img.shields.io/badge/rMPP-supported-green)](https://remarkable.com/store/overview/remarkable-paper-pro)
+[![rmppm](https://img.shields.io/badge/rMPPM-supported-green)](https://remarkable.com/products/remarkable-paper/pro-move)
 <img src="assets/rm-shot.svg" alt="rm-shot Icon" width="125" align="right">
 <p align="justify">
 A xovi extension that provides screenshot functionality for reMarkable tablets.
@@ -8,7 +9,6 @@ A xovi extension that provides screenshot functionality for reMarkable tablets.
 
 > [!NOTE]
 > Device support is based on currently released versions of the dependencies below.
-> - Paper Pro Move support should be added in an upcoming framebuffer-spy release.
 > - reMarkable 1 is not supported by framebuffer-spy at this time.
 
 <br clear="right">
