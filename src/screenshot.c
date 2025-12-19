@@ -65,8 +65,8 @@ static DeviceInfo detectDevice(void)
         dev.name = "Paper Pro Move";
     } else if (strstr(machine, "ferrari")) {
         dev.width = 1632;
-        dev.height = 2154;
-        dev.displayWidth = 1632;
+        dev.height = 2160;
+        dev.displayWidth = 1620;
         dev.bytesPerPixel = 4;
         dev.isRGBA = 1;
         dev.name = "Paper Pro";
