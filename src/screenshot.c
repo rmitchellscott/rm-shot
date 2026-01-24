@@ -19,8 +19,7 @@
 
 const char *rm_shot_version = "rm-shot version " VERSION;
 
-// Import from framebuffer-spy
-void* getFramebufferAddress() __attribute__((weak));
+#include "xovi.h"
 
 static void debug_log(const char* format, ...) {
     va_list args;
@@ -79,20 +78,6 @@ static DeviceInfo detectDevice(void)
         dev.name = "RM2";
     }
     return dev;
-}
-
-static void* getFramebufferAddr(void)
-{
-    // Get framebuffer address
-    const char* envAddr = getenv("FRAMEBUFFER_SPY_EXTENSION_FBADDR");
-    if (envAddr) {
-        void* parsedAddr = NULL;
-        if (sscanf(envAddr, "%p", &parsedAddr) == 1) {
-            return parsedAddr;
-        }
-    }
-
-    return NULL;
 }
 
 static unsigned char* readFramebuffer(void* address, DeviceInfo device)
@@ -217,7 +202,7 @@ int takeScreenshot(const char* basePath)
 
     DeviceInfo device = detectDevice();
 
-    void* fbAddr = getFramebufferAddr();
+    void* fbAddr = framebuffer_spy$getFramebufferAddress();
     if (!fbAddr) {
         debug_log("[rm-shot]: Cannot capture - framebuffer address not available\n");
         return 0;
