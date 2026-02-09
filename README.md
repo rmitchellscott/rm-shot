@@ -2,6 +2,7 @@
 [![rm2](https://img.shields.io/badge/rM2-supported-green)](https://remarkable.com/store/remarkable-2)
 [![rmpp](https://img.shields.io/badge/rMPP-supported-green)](https://remarkable.com/store/overview/remarkable-paper-pro)
 [![rmppm](https://img.shields.io/badge/rMPPM-supported-green)](https://remarkable.com/products/remarkable-paper/pro-move)
+[![vellum](https://img.shields.io/badge/vellum-rm--shot-purple)](https://vellum.delivery/#/package/rm-shot/)
 <img src="assets/rm-shot.svg" alt="rm-shot Icon" width="125" align="right">
 <p align="justify">
 A xovi extension that provides screenshot functionality for reMarkable tablets.
