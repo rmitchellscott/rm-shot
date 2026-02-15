@@ -55,7 +55,6 @@ The parameter to `takeScreenshot` follows the format: `"path,delay_ms"` or just 
 Examples:
 - `"/home/root"` - Immediate capture, saves to /home/root/
 - `"/home/root/screenshots,100"` - Wait 100ms, saves to /home/root/screenshots/
-- `"/mnt/usb,250"` - Wait 250ms, saves to /mnt/usb/
 
 The directory will be created automatically if it doesn't exist.
 
