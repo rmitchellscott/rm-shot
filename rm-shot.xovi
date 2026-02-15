@@ -1,7 +1,9 @@
 version 1.0.3
 
-depends-on framebuffer-spy:0.1.0
+depends-on framebuffer-spy:0.3.0
 import? framebuffer-spy$getFramebufferAddress
+import? framebuffer-spy$getFramebufferConfig
+import? framebuffer-spy$refreshFramebuffer
 
 export screenshotHandler
 with

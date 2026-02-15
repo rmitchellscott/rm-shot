@@ -21,6 +21,14 @@ const char *rm_shot_version = "rm-shot version " VERSION;
 
 #include "xovi.h"
 
+#define FBSPY_TYPE_RGB565 1
+#define FBSPY_TYPE_RGBA 2
+
+struct FramebufferConfig {
+    int width, height, type, bpl;
+    _Bool requiresReload;
+};
+
 static void debug_log(const char* format, ...) {
     va_list args;
     va_start(args, format);
@@ -34,86 +42,55 @@ typedef struct {
     int height;
     int displayWidth;
     int bytesPerPixel;
-    int isRGBA; // 1 for RGBA (Paper Pro), 0 for RGB565 (RM2)
+    int isRGBA;
     const char* name;
 } DeviceInfo;
 
 static DeviceInfo detectDevice(void)
 {
-    FILE* f = fopen("/sys/devices/soc0/machine", "r");
-    if (!f) {
-        DeviceInfo dev = {1404, 1872, 1404, 2, 0, "RM2"};
-        return dev;
-    }
+    struct FramebufferConfig fbConfig = ((struct FramebufferConfig (*)()) framebuffer_spy$getFramebufferConfig)();
 
-    char machine[64] = {0};
-    if (fgets(machine, sizeof(machine), f)) {
-        for (char* p = machine; *p; p++) {
-            if (*p >= 'A' && *p <= 'Z') *p += 32;
+    int displayWidth = fbConfig.width;
+    const char* name = "Unknown";
+
+    FILE* f = fopen("/sys/devices/soc0/machine", "r");
+    if (f) {
+        char machine[64] = {0};
+        if (fgets(machine, sizeof(machine), f)) {
+            for (char* p = machine; *p; p++) {
+                if (*p >= 'A' && *p <= 'Z') *p += 32;
+            }
+        }
+        fclose(f);
+
+        if (strstr(machine, "chiappa")) {
+            displayWidth = 954;
+            name = "Paper Pro Move";
+        } else if (strstr(machine, "ferrari")) {
+            displayWidth = 1620;
+            name = "Paper Pro";
+        } else {
+            name = "RM2";
         }
     }
-    fclose(f);
 
     DeviceInfo dev;
-    if (strstr(machine, "chiappa")) {
-        dev.width = 960;
-        dev.height = 1696;
-        dev.displayWidth = 954;
-        dev.bytesPerPixel = 4;
-        dev.isRGBA = 1;
-        dev.name = "Paper Pro Move";
-    } else if (strstr(machine, "ferrari")) {
-        dev.width = 1632;
-        dev.height = 2160;
-        dev.displayWidth = 1620;
-        dev.bytesPerPixel = 4;
-        dev.isRGBA = 1;
-        dev.name = "Paper Pro";
-    } else {
-        dev.width = 1404;
-        dev.height = 1872;
-        dev.displayWidth = 1404;
-        dev.bytesPerPixel = 2;
-        dev.isRGBA = 0;
-        dev.name = "RM2";
-    }
+    dev.isRGBA = (fbConfig.type == FBSPY_TYPE_RGBA);
+    dev.bytesPerPixel = dev.isRGBA ? 4 : 2;
+    dev.width = dev.isRGBA ? (fbConfig.bpl >> 2) : (fbConfig.bpl >> 1);
+    dev.height = fbConfig.height;
+    dev.displayWidth = displayWidth;
+    dev.name = name;
     return dev;
 }
 
 static unsigned char* readFramebuffer(void* address, DeviceInfo device)
 {
-    char memPath[64];
-    snprintf(memPath, sizeof(memPath), "/proc/%d/mem", getpid());
-
-    int fd = open(memPath, O_RDONLY);
-    if (fd < 0) {
-        debug_log("[rm-shot]: Failed to open %s\n", memPath);
-        return NULL;
-    }
-
     size_t fbSize = device.width * device.height * device.bytesPerPixel;
     unsigned char* buffer = malloc(fbSize);
-    if (!buffer) {
-        close(fd);
-        return NULL;
-    }
+    if (!buffer) return NULL;
 
-    if (lseek(fd, (off_t)address, SEEK_SET) == -1) {
-        debug_log("[rm-shot]: Failed to seek to framebuffer address\n");
-        close(fd);
-        free(buffer);
-        return NULL;
-    }
-
-    ssize_t bytesRead = read(fd, buffer, fbSize);
-    close(fd);
-
-    if (bytesRead != (ssize_t)fbSize) {
-        debug_log("[rm-shot]: Failed to read framebuffer (read %zd expected %zu)\n", bytesRead, fbSize);
-        free(buffer);
-        return NULL;
-    }
-
+    memcpy(buffer, address, fbSize);
     return buffer;
 }
 
@@ -208,13 +185,16 @@ int takeScreenshot(const char* basePath)
         return 0;
     }
 
+    if ((void*)framebuffer_spy$refreshFramebuffer) {
+        ((void (*)()) framebuffer_spy$refreshFramebuffer)();
+    }
+
     unsigned char* fbData = readFramebuffer(fbAddr, device);
     if (!fbData) {
         debug_log("[rm-shot]: Failed to read framebuffer\n");
         return 0;
     }
 
-    // Convert to RGB888 format for PNG
     unsigned char* rgb = NULL;
     if (device.isRGBA) {
         rgb = convertBGRAtoRGB(fbData, device.width, device.height, device.displayWidth);
