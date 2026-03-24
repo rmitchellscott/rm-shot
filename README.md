@@ -1,4 +1,5 @@
 # rm-shot
+i[![rm1](https://img.shields.io/badge/rM1-supported-green)](https://remarkable.com/store/remarkable)
 [![rm2](https://img.shields.io/badge/rM2-supported-green)](https://remarkable.com/store/remarkable-2)
 [![rmpp](https://img.shields.io/badge/rMPP-supported-green)](https://remarkable.com/store/overview/remarkable-paper-pro)
 [![rmppm](https://img.shields.io/badge/rMPPM-supported-green)](https://remarkable.com/products/remarkable-paper/pro-move)
@@ -7,10 +8,6 @@
 <p align="justify">
 A xovi extension that provides screenshot functionality for reMarkable tablets.
 </p>
-
-> [!NOTE]
-> Device support is based on currently released versions of the dependencies below.
-> - reMarkable 1 is not supported by framebuffer-spy at this time.
 
 <br clear="right">
 
@@ -58,10 +55,16 @@ Examples:
 
 The directory will be created automatically if it doesn't exist.
 
+### Shell Usage
+
+```bash
+echo '>etakeScreenshot:/home/root/screenshots,100' > /run/xovi-mb; cat /run/xovi-mb-out
+```
+
 ### QML Usage
 
 ```qml
-import net.asivery.XoviMessageBroker 1.0
+import net.asivery.XoviMessageBroker 2.0
 
 Item {
     XoviMessageBroker {
@@ -99,4 +102,4 @@ This builds both architectures:
 
 ### License
 
-MIT
+GPLv3

@@ -26,8 +26,7 @@ extern "C" {
  * Thread-safe: This function uses internal locking and can be called from multiple threads.
  *
  * Requirements:
- *   - The framebuffer-spy extension must be loaded and FRAMEBUFFER_SPY_EXTENSION_FBADDR
- *     environment variable must be set
+ *   - The framebuffer-spy extension must be loaded
  *
  * Example usage:
  *

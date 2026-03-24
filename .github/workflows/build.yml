@@ -95,8 +95,10 @@ jobs:
 
           ## Device Compatibility
 
+          - **reMarkable 1**: `rm-shot-armv7.so`
           - **reMarkable 2**: `rm-shot-armv7.so`
           - **reMarkable Paper Pro**: `rm-shot-aarch64.so`
+          - **reMarkable Paper Pro Move**: `rm-shot-aarch64.so`
           EOF
 
       - name: Download armv7 artifact

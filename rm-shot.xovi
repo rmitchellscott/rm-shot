@@ -1,7 +1,6 @@
-version 1.0.3
+version 1.0.4
 
-depends-on framebuffer-spy:0.3.0
-import? framebuffer-spy$getFramebufferAddress
+depends-on framebuffer-spy:0.2.0
 import? framebuffer-spy$getFramebufferConfig
 import? framebuffer-spy$refreshFramebuffer
 

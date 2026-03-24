@@ -25,6 +25,7 @@ const char *rm_shot_version = "rm-shot version " VERSION;
 #define FBSPY_TYPE_RGBA 2
 
 struct FramebufferConfig {
+    void *framebufferAddress;
     int width, height, type, bpl;
     _Bool requiresReload;
 };
@@ -38,6 +39,7 @@ static void debug_log(const char* format, ...) {
 }
 
 typedef struct {
+    void* framebufferAddress;
     int width;
     int height;
     int displayWidth;
@@ -69,12 +71,16 @@ static DeviceInfo detectDevice(void)
         } else if (strstr(machine, "ferrari")) {
             displayWidth = 1620;
             name = "Paper Pro";
+        } else if (strstr(machine, "remarkable 1.0") || strstr(machine, "remarkable prototype 1")) {
+            displayWidth = fbConfig.width - 4;
+            name = "RM1";
         } else {
             name = "RM2";
         }
     }
 
     DeviceInfo dev;
+    dev.framebufferAddress = fbConfig.framebufferAddress;
     dev.isRGBA = (fbConfig.type == FBSPY_TYPE_RGBA);
     dev.bytesPerPixel = dev.isRGBA ? 4 : 2;
     dev.width = dev.isRGBA ? (fbConfig.bpl >> 2) : (fbConfig.bpl >> 1);
@@ -179,7 +185,7 @@ int takeScreenshot(const char* basePath)
 
     DeviceInfo device = detectDevice();
 
-    void* fbAddr = framebuffer_spy$getFramebufferAddress();
+    void* fbAddr = device.framebufferAddress;
     if (!fbAddr) {
         debug_log("[rm-shot]: Cannot capture - framebuffer address not available\n");
         return 0;
