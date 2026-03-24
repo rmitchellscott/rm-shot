@@ -1,4 +1,4 @@
-version 1.0.4
+version 1.1.1
 
 depends-on framebuffer-spy:0.2.0
 import? framebuffer-spy$getFramebufferConfig
