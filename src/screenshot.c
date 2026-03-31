@@ -179,7 +179,7 @@ static int mkdirp(const char* path)
     return 0;
 }
 
-int takeScreenshot(const char* basePath)
+char* takeScreenshot(const char* basePath)
 {
     mkdirp(basePath);
 
@@ -188,7 +188,7 @@ int takeScreenshot(const char* basePath)
     void* fbAddr = device.framebufferAddress;
     if (!fbAddr) {
         debug_log("[rm-shot]: Cannot capture - framebuffer address not available\n");
-        return 0;
+        return NULL;
     }
 
     if ((void*)framebuffer_spy$refreshFramebuffer) {
@@ -198,7 +198,7 @@ int takeScreenshot(const char* basePath)
     unsigned char* fbData = readFramebuffer(fbAddr, device);
     if (!fbData) {
         debug_log("[rm-shot]: Failed to read framebuffer\n");
-        return 0;
+        return NULL;
     }
 
     unsigned char* rgb = NULL;
@@ -210,7 +210,7 @@ int takeScreenshot(const char* basePath)
     free(fbData);
 
     if (!rgb) {
-        return 0;
+        return NULL;
     }
 
     time_t now = time(NULL);
@@ -226,10 +226,10 @@ int takeScreenshot(const char* basePath)
 
     if (result) {
         debug_log("[rm-shot]: Screenshot saved successfully to: %s\n", filename);
-        return 1;
+        return strdup(filename);
     } else {
         debug_log("[rm-shot]: Failed to save screenshot to: %s\n", filename);
-        return 0;
+        return NULL;
     }
 }
 
@@ -250,7 +250,16 @@ void* screenshotThread(void* arg) {
         usleep(args->delay_ms * 1000);
     }
 
-    takeScreenshot(args->path);
+    char* filepath = takeScreenshot(args->path);
+
+    if (filepath) {
+        if ((void*)xovi_message_broker$broadcast)
+            ((char *(*)(const char *, const char *))xovi_message_broker$broadcast)("screenshotComplete", filepath);
+        free(filepath);
+    } else {
+        if ((void*)xovi_message_broker$broadcast)
+            ((char *(*)(const char *, const char *))xovi_message_broker$broadcast)("screenshotFailed", "");
+    }
 
     free(args->path);
     free(args);
