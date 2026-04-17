@@ -102,4 +102,6 @@ This builds both architectures:
 
 ### License
 
-GPLv3
+Copyright (C) 2025 Mitchell Scott
+
+Licensed under the GNU General Public License v3.0.
