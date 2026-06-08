@@ -39,9 +39,9 @@ typedef struct {
 
 typedef enum {
     ROT_0 = 0,
-    ROT_90,
+    ROT_270,
     ROT_180,
-    ROT_270
+    ROT_90
 } Rotation;
 
 typedef struct {
