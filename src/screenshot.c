@@ -374,8 +374,7 @@ void* screenshotThread(void* arg) {
     if (args->delay_ms > 0) {
         usleep(args->delay_ms * 1000);
     }
-    char* filepath;
-    filepath = takeScreenshot(args->path, args->opt);
+    char* filepath = takeScreenshot(args->path, args->opt);
 
 
     if (filepath) {
