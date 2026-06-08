@@ -296,7 +296,6 @@ static int mkdirp(const char* path)
 
 char* takeScreenshot(const char* basePath, const ScreenshotOptions* opt)
 {
-    mkdirp(basePath);
 
     DeviceInfo device = detectDevice();
 
@@ -336,14 +335,21 @@ char* takeScreenshot(const char* basePath, const ScreenshotOptions* opt)
     unsigned char *transformedRgb = transformRGB(rgb, imageWidth,imageHeight, &transformedWidth, &transformedHeight, opt);
     free(rgb);
     rgb = transformedRgb;
-    
-    time_t now = time(NULL);
-    struct tm* tm_info = localtime(&now);
-    char timestamp[32];
-    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d_%H-%M-%S", tm_info);
 
     char filename[512];
-    snprintf(filename, sizeof(filename), "%s/screenshot_%s.png", basePath, timestamp);
+    size_t len = strlen(basePath);
+    
+    
+    if (len >= 4 && strcmp(basePath + len - 4, ".png") == 0) {
+        snprintf(filename, sizeof(filename), "%s", basePath);
+    } else {
+        mkdirp(basePath);
+        time_t now = time(NULL);
+        struct tm* tm_info = localtime(&now);
+        char timestamp[32];
+        strftime(timestamp, sizeof(timestamp), "%Y-%m-%d_%H-%M-%S", tm_info);
+        snprintf(filename, sizeof(filename), "%s/screenshot_%s.png", basePath, timestamp);
+    }
 
     int result = stbi_write_png(filename, transformedWidth, transformedHeight, 3, rgb, transformedWidth * 3);
     free(rgb);
