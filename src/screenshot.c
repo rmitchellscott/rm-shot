@@ -37,6 +37,8 @@ typedef struct {
     int bottom;
 } CropRect;
 
+// Indexed by xochitl's orientation (1 => device rotated 90 degrees); each value is
+// the inverse rotation applied to the image to bring it upright.
 typedef enum {
     ROT_0 = 0,
     ROT_270,
@@ -49,7 +51,6 @@ typedef struct {
     bool cropEnabled;
     CropRect cropRect;
 } ScreenshotOptions;
-
 
 static void debug_log(const char* format, ...) {
     va_list args;
@@ -169,7 +170,7 @@ static unsigned char* convertBGRAtoRGB(unsigned char* bgra, int width, int heigh
     return rgb;
 }
 
-unsigned char *transformRGB(
+static unsigned char *transformRGB(
     const unsigned char *source,
     int sourceWidth,
     int sourceHeight,
@@ -178,16 +179,17 @@ unsigned char *transformRGB(
     const ScreenshotOptions *opt)
 {
     int rotatedWidth = sourceWidth;
-    int rotatedHeigth = sourceHeight;
+    int rotatedHeight = sourceHeight;
 
     if (opt->rotation == ROT_90 || opt->rotation == ROT_270) {
         rotatedWidth = sourceHeight;
-        rotatedHeigth = sourceWidth;
+        rotatedHeight = sourceWidth;
     }
 
-    int left = 0, top = 0, right = rotatedWidth, bottom = rotatedHeigth;
+    // Crop coordinates are interpreted in the rotated (post-rotation) image space.
+    int left = 0, top = 0, right = rotatedWidth, bottom = rotatedHeight;
 
-    if (opt && opt->cropEnabled) {
+    if (opt->cropEnabled) {
         left = opt->cropRect.left;
         top = opt->cropRect.top;
         right = opt->cropRect.right;
@@ -196,7 +198,7 @@ unsigned char *transformRGB(
         if (left < 0) left = 0;
         if (top < 0) top = 0;
         if (right > rotatedWidth) right = rotatedWidth;
-        if (bottom > rotatedHeigth) bottom = rotatedHeigth;
+        if (bottom > rotatedHeight) bottom = rotatedHeight;
 
         if (right <= left || bottom <= top)
             return NULL;
@@ -329,19 +331,32 @@ char* takeScreenshot(const char* basePath, const ScreenshotOptions* opt)
     if (!rgb) {
         return NULL;
     }
+
     int transformedWidth, transformedHeight;
-    
-    //do the transform
-    unsigned char *transformedRgb = transformRGB(rgb, imageWidth,imageHeight, &transformedWidth, &transformedHeight, opt);
+    unsigned char *transformedRgb = transformRGB(rgb, imageWidth, imageHeight, &transformedWidth, &transformedHeight, opt);
     free(rgb);
+    if (!transformedRgb) {
+        debug_log("[rm-shot]: Failed to transform image (invalid crop or allocation)\n");
+        return NULL;
+    }
     rgb = transformedRgb;
 
     char filename[512];
     size_t len = strlen(basePath);
-    
-    
+
     if (len >= 4 && strcmp(basePath + len - 4, ".png") == 0) {
         snprintf(filename, sizeof(filename), "%s", basePath);
+
+        const char* slash = strrchr(filename, '/');
+        if (slash && slash != filename) {
+            char dir[512];
+            size_t dirLen = slash - filename;
+            if (dirLen < sizeof(dir)) {
+                memcpy(dir, filename, dirLen);
+                dir[dirLen] = '\0';
+                mkdirp(dir);
+            }
+        }
     } else {
         mkdirp(basePath);
         time_t now = time(NULL);
@@ -382,7 +397,6 @@ void* screenshotThread(void* arg) {
     }
     char* filepath = takeScreenshot(args->path, args->opt);
 
-
     if (filepath) {
         if ((void*)xovi_message_broker$broadcast)
             ((char *(*)(const char *, const char *))xovi_message_broker$broadcast)("screenshotComplete", filepath);
@@ -404,77 +418,60 @@ char* screenshotHandler(const char* param)
     const char* input = (param && param[0]) ? param : "/home/root,0";
     char* path = NULL;
     int delay_ms = 0;
-    
-    ScreenshotOptions* opt = malloc(sizeof(ScreenshotOptions));
-    memset(opt, 0, sizeof(ScreenshotOptions));
 
+    ScreenshotOptions* opt = malloc(sizeof(ScreenshotOptions));
+    if (!opt) {
+        return strdup("failed");
+    }
+    memset(opt, 0, sizeof(ScreenshotOptions));
     opt->rotation = ROT_0;
     opt->cropEnabled = false;
-    
+
     char* tmp = strdup(input);
     if (!tmp) {
         free(opt);
         return strdup("failed");
     }
 
+    // Format: path[,delay_ms[,rotation[,left,top,right,bottom]]]
+    char* fields[7] = {0};
+    int fieldCount = 0;
     char* saveptr = NULL;
-    char* token = strtok_r(tmp, ",", &saveptr);
-
-    if (token) {
-        path = strdup(token);
-    } else {
-        path = strdup("/home/root");
+    for (char* token = strtok_r(tmp, ",", &saveptr);
+         token && fieldCount < 7;
+         token = strtok_r(NULL, ",", &saveptr)) {
+        fields[fieldCount++] = token;
     }
 
-    token = strtok_r(NULL, ",", &saveptr);
-    if (token) {
-        delay_ms = atoi(token);
+    path = strdup(fields[0] ? fields[0] : "/home/root");
+    delay_ms = fields[1] ? atoi(fields[1]) : 0;
+
+    if (fields[2]) {
+        int rotation = atoi(fields[2]);
+        opt->rotation = (rotation >= 0 && rotation <= 3) ? (Rotation)rotation : ROT_0;
     }
 
-    token = strtok_r(NULL, ",", &saveptr);
-    if (token) {
-        opt->rotation = (Rotation)atoi(token);
-    }
-
-    int left, top, right, bottom;
-    token = strtok_r(NULL, ",", &saveptr);
-    if (!token) {
-        opt->cropEnabled = false;
-    } else {
-        left = atoi(token);
-    
-        token = strtok_r(NULL, ",", &saveptr);
-        if (!token) {
-            opt->cropEnabled = false;
-        } else {
-            top = atoi(token);
-    
-            token = strtok_r(NULL, ",", &saveptr);
-            if (!token) {
-                opt->cropEnabled = false;
-            } else {
-                right = atoi(token);
-    
-                token = strtok_r(NULL, ",", &saveptr);
-                if (!token) {
-                    opt->cropEnabled = false;
-                } else {
-                    bottom = atoi(token);
-    
-                    opt->cropRect.left = left;
-                    opt->cropRect.top = top;
-                    opt->cropRect.right = right;
-                    opt->cropRect.bottom = bottom;
-    
-                    opt->cropEnabled = true;
-                }
-            }
-        }
+    if (fieldCount >= 7) {
+        opt->cropRect.left = atoi(fields[3]);
+        opt->cropRect.top = atoi(fields[4]);
+        opt->cropRect.right = atoi(fields[5]);
+        opt->cropRect.bottom = atoi(fields[6]);
+        opt->cropEnabled = true;
     }
 
     free(tmp);
-        
+
+    if (!path) {
+        free(opt);
+        return strdup("failed");
+    }
+
     ScreenshotThreadArgs* args = malloc(sizeof(ScreenshotThreadArgs));
+    if (!args) {
+        free(path);
+        free(opt);
+        return strdup("failed");
+    }
     args->path = path;
     args->delay_ms = delay_ms;
     args->opt = opt;
@@ -486,6 +483,7 @@ char* screenshotHandler(const char* param)
     } else {
         debug_log("[rm-shot]: Failed to create screenshot thread\n");
         free(path);
+        free(opt);
         free(args);
         return strdup("failed");
     }

@@ -44,16 +44,19 @@ strings /home/root/xovi/extensions.d/rm-shot-*.so | grep "rm-shot version"
 
 ### Parameter Format
 
-The parameter to `takeScreenshot` follows the format: `"path,delay_ms"` or just `"path"`
+The parameter format is `"path[,delay_ms[,rotation[,left,top,right,bottom]]]"`.
 
-- **path**: Directory where screenshots will be saved
-- **delay_ms** (optional): Milliseconds to wait before capturing (useful for closing UI elements)
+- **path**: Directory for a timestamped file, or a `.png` filename to save exactly there. Missing directories are created.
+- **delay_ms** (optional): Milliseconds to wait before capturing (useful for closing UI elements).
+- **rotation** (optional): `0`-`3`, matching xochitl's orientation (`1` = 90°). `0` or omitted means no rotation.
+- **left,top,right,bottom** (optional): Crop rectangle in the rotated image's coordinates. All four required.
 
 Examples:
 - `"/home/root"` - Immediate capture, saves to /home/root/
 - `"/home/root/screenshots,100"` - Wait 100ms, saves to /home/root/screenshots/
-
-The directory will be created automatically if it doesn't exist.
+- `"/home/root/shot.png"` - Saves to that exact file
+- `"/home/root,0,1"` - Rotate for a device at 90°
+- `"/home/root,0,0,10,10,200,300"` - Crop to (10,10)-(200,300)
 
 ### Shell Usage
 
